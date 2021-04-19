@@ -74,7 +74,7 @@ class BackpropBertMixin(bp.BackpropModuleMixin):
 
     def convert_bert_to_attr(self, layer: AttnSubLayer, config: BertConfig):
         new_layer = self._bert_layer_types[type(layer)](config)
-        new_layer.load_state_dict(layer.state_dict())
+        new_layer.load_state_dict(layer.state_dict(), strict=False)
         return new_layer
 
     def hidden_to_attention(self, h: HiddenArray) -> AttentionArray:
