@@ -206,4 +206,4 @@ class LRPBertForSequenceClassification(LRPBertMixin, BBFSC):
     def attr_backward(self, rel_y: np.ndarray, eps: float = 0.001) -> \
             Tuple[HiddenArray, HiddenArray, HiddenArray]:
         rel_pooled = self.classifier.attr_backward(rel_y, eps=eps)
-        return self.bert.attr_backward(rel_pooled=rel_pooled, eps=eps)
+        return self.roberta.attr_backward(rel_pooled=rel_pooled, eps=eps)

@@ -584,14 +584,14 @@ class BackpropBertForSequenceClassification(BackpropBertMixin, BFSC):
 
     def __init__(self, config: BertConfig):
         super(BackpropBertForSequenceClassification, self).__init__(config)
-        self.bert = self.convert_bert_to_attr(self.bert, config)
+        self.roberta = self.convert_bert_to_attr(self.roberta, config)
         self.classifier = self.convert_to_attr(self.classifier)
 
     def attr(self):
         super(BackpropBertForSequenceClassification, self).attr()
-        self.bert.attr()
+        self.roberta.attr()
         self.classifier.attr()
 
     def attr_forward(self, **kwargs):
-        outputs = self.bert(**kwargs)
+        outputs = self.roberta(**kwargs)
         return self.classifier(outputs[1])
