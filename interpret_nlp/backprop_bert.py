@@ -593,7 +593,7 @@ class BackpropBertForSequenceClassification(BackpropBertMixin, BFSC):
 
     def __init__(self, config: BertConfig):
         super(BackpropBertForSequenceClassification, self).__init__(config)
-        self.roberta.pooler.dense = self.classifier.dense
+        self.roberta.pooler = self.classifier
         self.classifier = self.classifier.out_proj
         self.roberta = self.convert_bert_to_attr(self.roberta, config)
         self.classifier = self.convert_to_attr(self.classifier)
