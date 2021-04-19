@@ -481,7 +481,7 @@ class BackpropBertModel(BackpropBertMixin, roberta.RobertaModel):
         super(BackpropBertModel, self).__init__(config)
         self.embeddings = self.convert_bert_to_attr(self.embeddings, config)
         self.encoder = self.convert_bert_to_attr(self.encoder, config)
-        self.classifier.dense = self.convert_bert_to_attr(self.classifier.dense, config)
+        self.pooler = self.convert_bert_to_attr(self.pooler, config)
 
         # bert.pooler.dense.weight
         # bert.pooler.dense.bias
@@ -496,7 +496,7 @@ class BackpropBertModel(BackpropBertMixin, roberta.RobertaModel):
         super(BackpropBertModel, self).attr()
         self.embeddings.attr()
         self.encoder.attr()
-        self.classifier.dense.attr()
+        self.pooler.attr()
 
     def attr_forward(self, input_ids=None, attention_mask=None,
                      token_type_ids=None, position_ids=None, head_mask=None,
@@ -576,7 +576,7 @@ class BackpropBertModel(BackpropBertMixin, roberta.RobertaModel):
 
         sequence_output = encoder_outputs[0]
         self._state = {"output_shape": sequence_output.shape}
-        pooled_output = self.classifier.dense(sequence_output)
+        pooled_output = self.pooler(sequence_output)
         return (sequence_output, pooled_output) + encoder_outputs[1:]
 
 
@@ -593,15 +593,17 @@ class BackpropBertForSequenceClassification(BackpropBertMixin, BFSC):
 
     def __init__(self, config: BertConfig):
         super(BackpropBertForSequenceClassification, self).__init__(config)
-        self.roberta = self.convert_bert_to_attr(self.roberta, config)
-        self.classifier.out_proj = self.convert_to_attr(self.classifier.out_proj)
-
+        self.roberta.pooler = self.classifier.dense
+        self.classifier = self.classifier.out_proj
         
+        self.roberta = self.convert_bert_to_attr(self.roberta, config)
+        self.classifier = self.convert_to_attr(self.classifier)
+
     def attr(self):
         super(BackpropBertForSequenceClassification, self).attr()
         self.roberta.attr()
-        self.classifier.out_proj.attr()
+        self.classifier.attr()
 
     def attr_forward(self, **kwargs):
         outputs = self.roberta(**kwargs)
-        return self.classifier.out_proj(outputs[1])
+        return self.classifier(outputs[1])
