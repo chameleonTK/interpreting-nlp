@@ -5,7 +5,7 @@ import scipy.special as sp
 import torch
 from torch import nn
 from transformers import BertConfig
-from transformers.models.roberta import modeling_roberta as bert
+from transformers.models.roberta import modeling_roberta as roberta
 
 import backprop_module as bp
 
@@ -16,7 +16,7 @@ IndexTensor = torch.LongTensor  # (batch_size, seq_len)
 EmbeddingTensor = torch.FloatTensor  # (batch_size, seq_len, hidden_size)
 
 NormalLayer = Union[nn.Linear, nn.LayerNorm]
-AttnSubLayer = Union[bert.BertSelfAttention, bert.BertSelfOutput]
+AttnSubLayer = Union[roberta.RobertaSelfAttention, roberta.RobertaSelfOutput]
 
 _erf_approx = lambda x: np.tanh(np.sqrt(2. / np.pi) * (x + 0.044715 * x ** 3))
 activations = dict(relu=lambda x: np.maximum(x, 0.),
@@ -44,11 +44,11 @@ class BackpropBertMixin(bp.BackpropModuleMixin):
 
     _layer_types = {nn.Linear: bp.BackpropLinear,
                     nn.LayerNorm: bp.BackpropLayerNorm}
-    _bert_layer_types = {bert.BertSelfAttention: None,
-                         bert.BertSelfOutput: None,
-                         bert.BertAttention: None,
-                         bert.BertIntermediate: None,
-                         bert.BertOutput: None}
+    _bert_layer_types = {roberta.RobertaSelfAttention: None,
+                         roberta.RobertaSelfOutput: None,
+                         roberta.RobertaAttention: None,
+                         roberta.RobertaIntermediate: None,
+                         roberta.RobertaOutput: None}
 
     def convert_to_attr(self, layer: NormalLayer) -> bp.BackpropModuleMixin:
         """
@@ -85,7 +85,7 @@ class BackpropBertMixin(bp.BackpropModuleMixin):
         return attention_to_hidden(a)
 
 
-class BackpropBertEmbeddings(BackpropBertMixin, bert.BertEmbeddings):
+class BackpropBertEmbeddings(BackpropBertMixin, roberta.RobertaEmbeddings):
     """
     Combines word embeddings with positional embeddings and token type
     embeddings.
@@ -142,7 +142,7 @@ class BackpropBertEmbeddings(BackpropBertMixin, bert.BertEmbeddings):
                               token_type_embeds)
 
 
-class BackpropBertSelfAttention(BackpropBertMixin, bert.BertSelfAttention):
+class BackpropBertSelfAttention(BackpropBertMixin, roberta.RobertaSelfAttention):
     """
     A BERT self-attention module. This module is responsible for
     implementing the scaled dot-product attention equation. This module
@@ -210,7 +210,7 @@ class BackpropBertSelfAttention(BackpropBertMixin, bert.BertSelfAttention):
         return context_layer, attention_probs
 
 
-class BackpropBertSelfOutput(BackpropBertMixin, bert.BertSelfOutput):
+class BackpropBertSelfOutput(BackpropBertMixin, roberta.RobertaSelfOutput):
     """
     Implements the attention heads and add-and-norm portion of a self-
     attention layer. This layer is used with BackpropBertSelfAttention.
@@ -234,14 +234,14 @@ class BackpropBertSelfOutput(BackpropBertMixin, bert.BertSelfOutput):
         return self.LayerNorm(dense_output + input_tensor)
 
 
-class BackpropBertAttention(BackpropBertMixin, bert.BertAttention):
+class BackpropBertAttention(BackpropBertMixin, roberta.RobertaAttention):
     """
     A complete self-attention layer, which combines
     BackpropBertSelfAttention with BackpropBertSelfOutput.
     """
 
-    _bert_layer_types = {bert.BertSelfAttention: BackpropBertSelfAttention,
-                         bert.BertSelfOutput: BackpropBertSelfOutput}
+    _bert_layer_types = {roberta.RobertaSelfAttention: BackpropBertSelfAttention,
+                         roberta.RobertaSelfOutput: BackpropBertSelfOutput}
 
     def __init__(self, config: BertConfig):
         super(BackpropBertAttention, self).__init__(config)
@@ -276,7 +276,7 @@ class BackpropBertAttention(BackpropBertMixin, bert.BertAttention):
         return self.output(self_outputs[0], hidden_states), self_outputs[1]
 
 
-class BackpropBertIntermediate(BackpropBertMixin, bert.BertIntermediate):
+class BackpropBertIntermediate(BackpropBertMixin, roberta.RobertaIntermediate):
     """
     Implements the first linear layer after the self-attention layer.
     """
@@ -294,7 +294,7 @@ class BackpropBertIntermediate(BackpropBertMixin, bert.BertIntermediate):
         return self.intermediate_act_fn_numpy(self.dense(hidden_states))
 
 
-class BackpropBertOutput(BackpropBertMixin, bert.BertOutput):
+class BackpropBertOutput(BackpropBertMixin, roberta.RobertaOutput):
     """
     Implements the final linear and add-and-norm layers of a Transformer
     encoder/decoder block.
@@ -318,13 +318,13 @@ class BackpropBertOutput(BackpropBertMixin, bert.BertOutput):
         return self.LayerNorm(dense_output + input_tensor)
 
 
-class BackpropBertLayer(BackpropBertMixin, bert.BertLayer):
+class BackpropBertLayer(BackpropBertMixin, roberta.RobertaLayer):
     """
     A full BERT encoder or decoder block.
     """
-    _bert_layer_types = {bert.BertAttention: BackpropBertAttention,
-                         bert.BertIntermediate: BackpropBertIntermediate,
-                         bert.BertOutput: BackpropBertOutput}
+    _bert_layer_types = {roberta.RobertaAttention: BackpropBertAttention,
+                         roberta.RobertaIntermediate: BackpropBertIntermediate,
+                         roberta.RobertaOutput: BackpropBertOutput}
 
     def __init__(self, config: BertConfig):
         super(BackpropBertLayer, self).__init__(config)
@@ -393,12 +393,12 @@ class BackpropBertLayer(BackpropBertMixin, bert.BertLayer):
         return output, attn_probs
 
 
-class BackpropBertEncoder(BackpropBertMixin, bert.BertEncoder):
+class BackpropBertEncoder(BackpropBertMixin, roberta.RobertaEncoder):
     """
     A BERT encoder, consisting of multiple encoder blocks.
     """
 
-    _bert_layer_types = {bert.BertLayer: BackpropBertLayer}
+    _bert_layer_types = {roberta.RobertaLayer: BackpropBertLayer}
 
     def __init__(self, config: BertConfig):
         super(BackpropBertEncoder, self).__init__(config)
@@ -445,7 +445,7 @@ class BackpropBertEncoder(BackpropBertMixin, bert.BertEncoder):
         return hidden_states, all_hidden_states, all_attentions
 
 
-class BackpropBertPooler(BackpropBertMixin, bert.BertPooler):
+class BackpropBertPooler(BackpropBertMixin, roberta.RobertaPooler):
     """
     A layer that "pools" the BERT output by passing the CLS output
     through a tanh.
@@ -463,7 +463,7 @@ class BackpropBertPooler(BackpropBertMixin, bert.BertPooler):
         return np.tanh(self.dense(hidden_states[:, 0]))
 
 
-class BackpropBertModel(BackpropBertMixin, bert.BertModel):
+class BackpropBertModel(BackpropBertMixin, roberta.RobertaModel):
     """
     A full BERT model. This is a stack of Transformer encoders that
     takes an input sequence of the form
@@ -471,9 +471,9 @@ class BackpropBertModel(BackpropBertMixin, bert.BertModel):
     and produces an output sequence of the same form. It is pre-trained
     on BERT's masked language modeling objective.
     """
-    _bert_layer_types = {bert.BertEmbeddings: BackpropBertEmbeddings,
-                         bert.BertEncoder: BackpropBertEncoder,
-                         bert.BertPooler: BackpropBertPooler}
+    _bert_layer_types = {roberta.RobertaEmbeddings: BackpropBertEmbeddings,
+                         roberta.RobertaEncoder: BackpropBertEncoder,
+                         roberta.RobertaPooler: BackpropBertPooler}
 
     _convert_attr_input_to_numpy = False
 
@@ -571,14 +571,14 @@ class BackpropBertModel(BackpropBertMixin, bert.BertModel):
         return (sequence_output, pooled_output) + encoder_outputs[1:]
 
 
-BFSC = bert.BertForSequenceClassification
+BFSC = roberta.RobertaForSequenceClassification
 
 
 class BackpropBertForSequenceClassification(BackpropBertMixin, BFSC):
     """
     A BERT model with a linear decoder.
     """
-    _bert_layer_types = {bert.BertModel: BackpropBertModel}
+    _bert_layer_types = {roberta.RobertaModel: BackpropBertModel}
 
     _convert_attr_input_to_numpy = False
 

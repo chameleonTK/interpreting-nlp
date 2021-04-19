@@ -2,7 +2,7 @@ from typing import Tuple
 
 import numpy as np
 from torch import nn
-from transformers.models.roberta import modeling_roberta as bert
+from transformers.models.roberta import modeling_roberta as roberta
 
 from lrp import lrp_linear, lrp_matmul
 import backprop_bert as bpbert
@@ -87,8 +87,8 @@ class LRPBertAttention(LRPBertMixin, bpbert.BackpropBertAttention):
     """
     BertAttention with LRP.
     """
-    _bert_layer_types = {bert.BertSelfAttention: LRPBertSelfAttention,
-                         bert.BertSelfOutput: LRPBertSelfOutput}
+    _bert_layer_types = {roberta.RobertaSelfAttention: LRPBertSelfAttention,
+                         roberta.RobertaSelfOutput: LRPBertSelfOutput}
 
     def attr_backward(self, rel_y: HiddenArray, eps: float = 0.001) -> \
             HiddenArray:
@@ -132,9 +132,9 @@ class LRPBertLayer(bpbert.BackpropBertLayer):
     """
     BertLayer with LRP.
     """
-    _bert_layer_types = {bert.BertAttention: LRPBertAttention,
-                         bert.BertIntermediate: LRPBertIntermediate,
-                         bert.BertOutput: LRPBertOutput}
+    _bert_layer_types = {roberta.RobertaAttention: LRPBertAttention,
+                         roberta.RobertaIntermediate: LRPBertIntermediate,
+                         roberta.RobertaOutput: LRPBertOutput}
 
     def attr_backward(self, rel_y: HiddenArray, eps: float = 0.001) -> \
             HiddenArray:
@@ -150,7 +150,7 @@ class LRPBertEncoder(bpbert.BackpropBertEncoder):
     """
     BertEncoder with LRP.
     """
-    _bert_layer_types = {bert.BertLayer: LRPBertLayer}
+    _bert_layer_types = {roberta.RobertaLayer: LRPBertLayer}
 
     def attr_backward(self, rel_y: HiddenArray, eps: float = 0.001) -> \
             HiddenArray:
@@ -174,9 +174,9 @@ class LRPBertModel(bpbert.BackpropBertModel):
     """
     BertModel with LRP.
     """
-    _bert_layer_types = {bert.BertEmbeddings: LRPBertEmbeddings,
-                         bert.BertEncoder: LRPBertEncoder,
-                         bert.BertPooler: LRPBertPooler}
+    _bert_layer_types = {roberta.RobertaEmbeddings: LRPBertEmbeddings,
+                         roberta.RobertaEncoder: LRPBertEncoder,
+                         roberta.RobertaPooler: LRPBertPooler}
 
     def attr_backward(self, rel_sequence: HiddenArray = None,
                       rel_pooled: np.ndarray = None, eps: float = 0.001) -> \
@@ -201,7 +201,7 @@ class LRPBertForSequenceClassification(LRPBertMixin, BBFSC):
     """
     A BERT model with a linear decoder.
     """
-    _bert_layer_types = {bert.BertModel: LRPBertModel}
+    _bert_layer_types = {roberta.RobertaModel: LRPBertModel}
 
     def attr_backward(self, rel_y: np.ndarray, eps: float = 0.001) -> \
             Tuple[HiddenArray, HiddenArray, HiddenArray]:
