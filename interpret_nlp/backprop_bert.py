@@ -5,7 +5,7 @@ import scipy.special as sp
 import torch
 from torch import nn
 from transformers import BertConfig
-from transformers.models.bert import modeling_bert as bert
+from transformers.models.roberta import modeling_roberta as bert
 
 import backprop_module as bp
 

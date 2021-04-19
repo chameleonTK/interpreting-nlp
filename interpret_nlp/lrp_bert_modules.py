@@ -2,7 +2,7 @@ from typing import Tuple
 
 import numpy as np
 from torch import nn
-from transformers.models.bert import modeling_bert as bert
+from transformers.models.roberta import modeling_roberta as bert
 
 from lrp import lrp_linear, lrp_matmul
 import backprop_bert as bpbert
