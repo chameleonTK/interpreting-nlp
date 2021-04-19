@@ -186,7 +186,7 @@ class LRPBertModel(bpbert.BackpropBertModel):
         if rel_sequence is None:
             rel_sequence = np.zeros(self._state["output_shape"])
         if rel_pooled is not None:
-            rel_first = self.pooler.attr_backward(rel_pooled, eps=eps)
+            rel_first = self.classifier.dense.attr_backward(rel_pooled, eps=eps)
             rel_sequence[:, 0] += rel_first
 
         rel_embeddings = self.encoder.attr_backward(rel_sequence, eps=eps)
@@ -205,5 +205,5 @@ class LRPBertForSequenceClassification(LRPBertMixin, BBFSC):
 
     def attr_backward(self, rel_y: np.ndarray, eps: float = 0.001) -> \
             Tuple[HiddenArray, HiddenArray, HiddenArray]:
-        rel_pooled = self.classifier.attr_backward(rel_y, eps=eps)
+        rel_pooled = self.classifier.out_proj.attr_backward(rel_y, eps=eps)
         return self.roberta.attr_backward(rel_pooled=rel_pooled, eps=eps)
