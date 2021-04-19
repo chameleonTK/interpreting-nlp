@@ -130,7 +130,7 @@ class BackpropBertEmbeddings(BackpropBertMixin, roberta.RobertaEmbeddings):
             position_ids = self.position_ids[:, :seq_length]
         position_embeds = self.position_embeddings(position_ids)
         position_embeds = position_embeds.detach().numpy()
-
+        
         if token_type_ids is None:
             token_type_ids = torch.zeros(input_shape, dtype=torch.long,
                                          device=self.position_ids.device)
@@ -386,7 +386,7 @@ class BackpropBertLayer(BackpropBertMixin, roberta.RobertaLayer):
             self._state = {"crossattention_used": False}
 
         # TODO: Make apply_chunking_to_forward compatible with NumPy
-        output = bert.apply_chunking_to_forward(self.feed_forward_chunk,
+        output = roberta.apply_chunking_to_forward(self.feed_forward_chunk,
                                                 self.chunk_size_feed_forward,
                                                 self.seq_len_dim, attn_output)
 
@@ -538,7 +538,9 @@ class BackpropBertModel(BackpropBertMixin, roberta.RobertaModel):
         if attention_mask is None:
             attention_mask = torch.ones(input_shape)
         if token_type_ids is None:
-            token_type_ids = np.zeros(input_shape, dtype="int64")
+            # Roberta does not use segment IDs???
+            # https://github.com/huggingface/transformers/issues/1234
+            token_type_ids = torch.zeros(input_shape, dtype=torch.long)
 
         # Not really sure what this is for
         extended_attention_mask = \
