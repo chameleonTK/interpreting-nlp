@@ -7,8 +7,8 @@ from functools import reduce
 
 import numpy as np
 
-from interpret_nlp.modules import backprop_module as bp
-from interpret_nlp.attribution.lrp import lrp_linear
+import backprop_module as bp
+from lrp import lrp_linear
 
 
 class LRPLinear(bp.BackpropLinear):

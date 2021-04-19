@@ -7,7 +7,7 @@ from torch import nn
 from transformers import BertConfig
 from transformers.models.bert import modeling_bert as bert
 
-from interpret_nlp.modules import backprop_module as bp
+import backprop_module as bp
 
 # Shorthands for different array sizes
 HiddenArray = np.ndarray  # (batch_size, seq_len, hidden_size)
