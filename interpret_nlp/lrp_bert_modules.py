@@ -183,10 +183,11 @@ class LRPBertModel(bpbert.BackpropBertModel):
             Tuple[HiddenArray, HiddenArray, HiddenArray]:
         assert rel_sequence is not None or rel_pooled is not None
 
+        # print(self)
         if rel_sequence is None:
             rel_sequence = np.zeros(self._state["output_shape"])
         if rel_pooled is not None:
-            rel_first = self.dense.attr_backward(rel_pooled, eps=eps)
+            rel_first = self.pooler.attr_backward(rel_pooled, eps=eps)
             rel_sequence[:, 0] += rel_first
 
         rel_embeddings = self.encoder.attr_backward(rel_sequence, eps=eps)
