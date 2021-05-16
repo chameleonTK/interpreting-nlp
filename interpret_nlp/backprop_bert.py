@@ -120,22 +120,22 @@ class BackpropBertEmbeddings(BackpropBertMixin, bert.BertEmbeddings):
 
         if input_ids is not None:
             input_shape = input_ids.shape
-            inputs_embeds = self.word_embeddings(input_ids).detach().numpy()
+            inputs_embeds = self.word_embeddings(input_ids).cpu().detach().numpy()
         else:
             input_shape = inputs_embeds.shape[:-1]
-            inputs_embeds = inputs_embeds.detach().numpy()
+            inputs_embeds = inputs_embeds.cpu().detach().numpy()
 
         seq_length = input_shape[1]
         if position_ids is None:
             position_ids = self.position_ids[:, :seq_length]
         position_embeds = self.position_embeddings(position_ids)
-        position_embeds = position_embeds.detach().numpy()
+        position_embeds = position_embeds.cpu().detach().numpy()
 
         if token_type_ids is None:
             token_type_ids = torch.zeros(input_shape, dtype=torch.long,
                                          device=self.position_ids.device)
         token_type_embeds = self.token_type_embeddings(token_type_ids)
-        token_type_embeds = token_type_embeds.detach().numpy()
+        token_type_embeds = token_type_embeds.cpu().detach().numpy()
 
         self._state = inputs_embeds, position_embeds, token_type_embeds
         return self.LayerNorm(inputs_embeds + position_embeds +
@@ -535,7 +535,7 @@ class BackpropBertModel(BackpropBertMixin, bert.BertModel):
         extended_attention_mask = \
             self.get_extended_attention_mask(attention_mask, input_shape,
                                              torch.device("cpu"))
-        extended_attention_mask = extended_attention_mask.detach().numpy()
+        extended_attention_mask = extended_attention_mask.cpu().detach().numpy()
 
         if self.config.is_decoder and encoder_hidden_states is not None:
             raise RuntimeWarning("I didn't implement this carefully")
@@ -545,7 +545,7 @@ class BackpropBertModel(BackpropBertMixin, bert.BertModel):
             encoder_extended_attn_mask = \
                 self.invert_attention_mask(encoder_attention_mask)
             encoder_extended_attn_mask = \
-                encoder_extended_attn_mask.detach().numpy()
+                encoder_extended_attn_mask.cpu().detach().numpy()
         else:
             encoder_extended_attn_mask = None
 

@@ -55,11 +55,11 @@ class BackpropModuleMixin(ABC):
                 args = list(args)
                 for i in range(len(args)):
                     if isinstance(args[i], torch.Tensor):
-                        args[i] = args[i].detach().numpy()
+                        args[i] = args[i].cpu().detach().numpy()
 
                 for k in kwargs:
                     if isinstance(kwargs[k], torch.Tensor):
-                        kwargs[k] = kwargs[k].detach().numpy()
+                        kwargs[k] = kwargs[k].cpu().detach().numpy()
 
             return self.attr_forward(*args, **kwargs)
         return super(BackpropModuleMixin, self).__call__(*args, **kwargs)
@@ -69,11 +69,11 @@ class BackpropModuleMixin(ABC):
             args = list(args)
             for i in range(len(args)):
                 if isinstance(args[i], torch.Tensor):
-                    args[i] = args[i].detach().numpy()
+                    args[i] = args[i].cpu().detach().numpy()
 
             for k in kwargs:
                 if isinstance(kwargs[k], torch.Tensor):
-                    kwargs[k] = kwargs[k].detach().numpy()
+                    kwargs[k] = kwargs[k].cpu().detach().numpy()
 
             return self.attr_backward(*args, **kwargs)
         self.backward(*args, **kwargs)
@@ -100,9 +100,9 @@ class BackpropLinear(BackpropModuleMixin, nn.Linear):
 
     def attr_forward(self, x: np.ndarray):
         self._input = [x]
-        wx = x @ self.weight.detach().numpy().T
+        wx = x @ self.weight.cpu().detach().numpy().T
         self._state = dict(wx=wx)
-        self._output = wx + self.bias.detach().numpy()
+        self._output = wx + self.bias.cpu().detach().numpy()
         return self._output
 
 
@@ -176,7 +176,7 @@ class BackpropRNNMixin(BackpropModuleMixin):
         :return: The weight/bias matrices
         """
         p = prefix + "_l" + str(layer) + ("_reverse" if direction == 1 else "")
-        return np.split(getattr(self, p).detach().numpy(), self.num_gates)
+        return np.split(getattr(self, p).cpu().detach().numpy(), self.num_gates)
 
 
 class BackpropLSTM(BackpropRNNMixin, nn.LSTM):
@@ -307,8 +307,8 @@ class BackpropLayerNorm(BackpropModuleMixin, nn.LayerNorm):
         if not self.elementwise_affine:
             return num / den
 
-        gamma = self.weight.detach().numpy()
-        beta = self.bias.detach().numpy()
+        gamma = self.weight.cpu().detach().numpy()
+        beta = self.bias.cpu().detach().numpy()
         gamma_term = (num / den) * gamma
         output = gamma_term + beta
 

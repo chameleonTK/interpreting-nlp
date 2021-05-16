@@ -19,7 +19,7 @@ class LRPLinear(bp.BackpropLinear):
     def attr_backward(self, rel_y: np.ndarray,
                       eps: float = 0.001) -> np.ndarray:
         return lrp_linear(self._input[0], self._state["wx"], rel_y,
-                          self.weight.detach().numpy().T, eps=eps)
+                          self.weight.cpu().detach().numpy().T, eps=eps)
 
 
 class LRPRNNMixin(ABC):
